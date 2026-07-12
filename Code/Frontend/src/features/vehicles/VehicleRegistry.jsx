@@ -197,9 +197,9 @@ export default function VehicleRegistry() {
           </div>
           <Input label="Name / Model" value={nameModel} onChange={(e) => setNameModel(e.target.value)} placeholder="e.g. Ford Transit" />
           <Select label="Vehicle Type" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} options={['Van', 'Truck', 'Mini Truck', 'Trailer']} />
-          <Input label="Max Capacity (kg)" type="number" value={maxCapacity} onChange={(e) => setMaxCapacity(e.target.value)} placeholder="e.g. 500" />
-          <Input label="Initial Odometer (km)" type="number" value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="e.g. 1500" />
-          <Input label="Acquisition Cost (₹)" type="number" value={acquisitionCost} onChange={(e) => setAcquisitionCost(e.target.value)} placeholder="e.g. 500000" />
+          <Input label="Max Capacity (kg)" type="number" min="0" max="100000" required value={maxCapacity} onChange={(e) => setMaxCapacity(e.target.value)} placeholder="e.g. 500" />
+          <Input label="Initial Odometer (km)" type="number" min="0" max="999999" required value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="e.g. 1500" />
+          <Input label="Acquisition Cost (₹)" type="number" min="0" required value={acquisitionCost} onChange={(e) => setAcquisitionCost(e.target.value)} placeholder="e.g. 500000" />
         </form>
       </Modal>
 

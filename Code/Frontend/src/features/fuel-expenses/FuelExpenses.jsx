@@ -177,8 +177,8 @@ export default function FuelExpenses() {
           <Select label="Vehicle" required value={fVehicle} onChange={(e) => setFVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Input label="Date" type="date" required value={fDate} onChange={(e) => setFDate(e.target.value)} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Liters" type="number" required value={fLiters} onChange={(e) => setFLiters(e.target.value)} />
-            <Input label="Cost" type="number" required value={fCost} onChange={(e) => setFCost(e.target.value)} />
+            <Input label="Liters" type="number" min="0.1" step="0.1" required value={fLiters} onChange={(e) => setFLiters(e.target.value)} />
+            <Input label="Cost (₹)" type="number" min="0" required value={fCost} onChange={(e) => setFCost(e.target.value)} />
           </div>
         </form>
       </Modal>
@@ -198,7 +198,7 @@ export default function FuelExpenses() {
           <Select label="Vehicle" required value={eVehicle} onChange={(e) => setEVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Select label="Expense Type" required value={eType} onChange={(e) => setEType(e.target.value)} options={['Toll', 'Fine', 'Misc', 'Tax']} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Amount (₹)" type="number" required value={eAmount} onChange={(e) => setEAmount(e.target.value)} />
+            <Input label="Amount (₹)" type="number" min="0" required value={eAmount} onChange={(e) => setEAmount(e.target.value)} />
             <Input label="Date" type="date" required value={eDate} onChange={(e) => setEDate(e.target.value)} />
           </div>
         </form>

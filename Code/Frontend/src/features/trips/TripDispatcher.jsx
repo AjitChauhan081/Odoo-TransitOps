@@ -143,8 +143,8 @@ export default function TripDispatcher() {
                 options={availableDrivers.map((d) => ({ value: d.id, label: `${d.name} (${d.license_number})` }))}
               />
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Cargo Weight (kg)" type="number" required value={cargoWeight} onChange={(e) => setCargoWeight(e.target.value)} />
-                <Input label="Planned Distance (km)" type="number" required value={distance} onChange={(e) => setDistance(e.target.value)} />
+                <Input label="Cargo Weight (kg)" type="number" min="0" max="50000" step="0.1" required value={cargoWeight} onChange={(e) => setCargoWeight(e.target.value)} />
+                <Input label="Planned Distance (km)" type="number" min="0" max="20000" step="0.1" required value={distance} onChange={(e) => setDistance(e.target.value)} />
               </div>
 
               {capacityExceeded && (
