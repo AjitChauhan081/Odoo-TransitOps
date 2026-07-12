@@ -54,6 +54,23 @@ class Vehicle(VehicleBase):
     class Config:
         from_attributes = True
 
+# ─── Vehicle Document Schemas ─────────────────────────────────────────────────
+
+class VehicleDocumentBase(BaseModel):
+    vehicle_id: int
+    document_type: str
+    file_path: str
+    uploaded_at: datetime
+
+class VehicleDocumentCreate(VehicleDocumentBase):
+    pass
+
+class VehicleDocument(VehicleDocumentBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # ─── Driver Schemas ───────────────────────────────────────────────────────────
 
 class DriverBase(BaseModel):

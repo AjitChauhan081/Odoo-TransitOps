@@ -33,15 +33,34 @@ def create_vehicle(
 @router.get("/", response_model=List[schemas.Vehicle])
 def list_vehicles(
     status: Optional[models.VehicleStatusEnum] = Query(None),
+    search: Optional[str] = Query(None, description="Search by name, model, or registration number"),
+    sort_by: Optional[str] = Query("id", description="Field to sort by (e.g. name_model, odometer)"),
+    order: Optional[str] = Query("asc", description="Sort order: 'asc' or 'desc'"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """List all vehicles. Optionally filter by status."""
+    """List all vehicles. Supports filtering, searching, and sorting."""
     query = db.query(models.Vehicle)
     if status:
         query = query.filter(models.Vehicle.status == status)
+    
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (models.Vehicle.name_model.ilike(search_pattern)) | 
+            (models.Vehicle.registration_number.ilike(search_pattern)) |
+            (models.Vehicle.vehicle_type.ilike(search_pattern))
+        )
+        
+    if hasattr(models.Vehicle, sort_by):
+        column = getattr(models.Vehicle, sort_by)
+        if order == "desc":
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
     return query.offset(skip).limit(limit).all()
 
 
