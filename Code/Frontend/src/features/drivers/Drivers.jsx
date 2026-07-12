@@ -179,7 +179,7 @@ export default function Drivers() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddDriver}>Save Driver</Button>
+            <Button variant="primary" type="submit" form="add-driver-form">Save Driver</Button>
           </>
         }
       >

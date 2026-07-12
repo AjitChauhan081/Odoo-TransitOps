@@ -187,7 +187,7 @@ export default function VehicleRegistry() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddVehicle}>Save Vehicle</Button>
+            <Button variant="primary" type="submit" form="add-vehicle-form">Save Vehicle</Button>
           </>
         }
       >

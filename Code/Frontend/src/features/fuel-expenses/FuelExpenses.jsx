@@ -169,11 +169,11 @@ export default function FuelExpenses() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setFuelModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSaveFuel}>Save</Button>
+            <Button variant="primary" type="submit" form="add-fuel-form">Save</Button>
           </>
         }
       >
-        <form onSubmit={handleSaveFuel} className="flex flex-col gap-4">
+        <form id="add-fuel-form" onSubmit={handleSaveFuel} className="flex flex-col gap-4">
           <Select label="Vehicle" required value={fVehicle} onChange={(e) => setFVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Input label="Date" type="date" required value={fDate} onChange={(e) => setFDate(e.target.value)} />
           <div className="grid grid-cols-2 gap-4">
@@ -190,11 +190,11 @@ export default function FuelExpenses() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSaveExpense}>Save</Button>
+            <Button variant="primary" type="submit" form="add-expense-form">Save</Button>
           </>
         }
       >
-        <form onSubmit={handleSaveExpense} className="flex flex-col gap-4">
+        <form id="add-expense-form" onSubmit={handleSaveExpense} className="flex flex-col gap-4">
           <Select label="Vehicle" required value={eVehicle} onChange={(e) => setEVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Select label="Expense Type" required value={eType} onChange={(e) => setEType(e.target.value)} options={['Toll', 'Fine', 'Misc', 'Tax']} />
           <div className="grid grid-cols-2 gap-4">
