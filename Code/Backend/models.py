@@ -51,11 +51,11 @@ class Vehicle(Base):
     acquisition_cost = Column(Float, nullable=False)
     status = Column(Enum(VehicleStatusEnum), default=VehicleStatusEnum.AVAILABLE)
 
-    trips = relationship("Trip", back_populates="vehicle")
-    maintenance_logs = relationship("MaintenanceLog", back_populates="vehicle")
-    fuel_logs = relationship("FuelLog", back_populates="vehicle")
-    expenses = relationship("Expense", back_populates="vehicle")
-    documents = relationship("VehicleDocument", back_populates="vehicle")
+    trips = relationship("Trip", back_populates="vehicle", cascade="all, delete-orphan")
+    maintenance_logs = relationship("MaintenanceLog", back_populates="vehicle", cascade="all, delete-orphan")
+    fuel_logs = relationship("FuelLog", back_populates="vehicle", cascade="all, delete-orphan")
+    expenses = relationship("Expense", back_populates="vehicle", cascade="all, delete-orphan")
+    documents = relationship("VehicleDocument", back_populates="vehicle", cascade="all, delete-orphan")
 
 class Driver(Base):
     __tablename__ = "drivers"
@@ -69,7 +69,7 @@ class Driver(Base):
     safety_score = Column(Float, default=100.0)
     status = Column(Enum(DriverStatusEnum), default=DriverStatusEnum.AVAILABLE)
 
-    trips = relationship("Trip", back_populates="driver")
+    trips = relationship("Trip", back_populates="driver", cascade="all, delete-orphan")
 
 class Trip(Base):
     __tablename__ = "trips"
