@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #FFFFFF;
+  --ink: #0A0A0A;
+  --ink-soft: #4A4A4A;
+  --line: #D9D9D9;
+  --line-strong: #111111;
+  --paper-dim: #F7F7F5;
+  --accent: #FFB020;
+  --status-available: #2E7D32;
+  --status-warn: #E08A00;
+  --status-danger: #C4291C;
+  --status-neutral: #6B6B6B;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Blueprint / graph-paper grid background for main content areas */
+.blueprint-grid {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+  opacity: 1;
+}
+.blueprint-grid-wrap {
+  position: relative;
+}
+.blueprint-grid-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+/* Thin, minimal scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) var(--paper-dim);
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: var(--paper-dim); }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 0; }
+
+/* Visible keyboard focus, no glow/blur */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* Utility: uppercase micro-label texture used throughout */
+.micro-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
