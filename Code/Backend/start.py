@@ -128,10 +128,10 @@ def seed_demo_data():
         # 0. Users
         if not db.query(models.User).first():
             hashed = get_password_hash("password123")
-            u1 = models.User(email="admin@transitops.com", hashed_password=hashed, role="Admin")
-            u2 = models.User(email="fleet@transitops.com", hashed_password=hashed, role="Fleet Manager")
-            u3 = models.User(email="finance@transitops.com", hashed_password=hashed, role="Financial Analyst")
-            u4 = models.User(email="driver@transitops.com", hashed_password=hashed, role="Driver")
+            u1 = models.User(email="fleet@transitops.com", hashed_password=hashed, role="Fleet Manager")
+            u2 = models.User(email="driver@transitops.com", hashed_password=hashed, role="Driver")
+            u3 = models.User(email="safety@transitops.com", hashed_password=hashed, role="Safety Officer")
+            u4 = models.User(email="finance@transitops.com", hashed_password=hashed, role="Financial Analyst")
             db.add_all([u1, u2, u3, u4])
             db.commit()
 
