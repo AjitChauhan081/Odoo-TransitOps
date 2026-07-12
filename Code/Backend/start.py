@@ -105,8 +105,67 @@ def create_tables():
         sys.exit(1)
 
 
+def seed_demo_data():
+    step(3, "Seeding demo data")
+    try:
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy import create_engine
+        import models
+        from routers.auth import get_password_hash
+        from datetime import datetime, timedelta
+
+        engine = create_engine(DATABASE_URL)
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        db = SessionLocal()
+
+        if db.query(models.User).first() and db.query(models.Vehicle).first():
+            print("  [SKIP] Database already contains data.")
+            db.close()
+            return
+
+        print("  [INFO] Populating database with initial demo data...")
+
+        # 0. Users
+        if not db.query(models.User).first():
+            hashed = get_password_hash("password123")
+            u1 = models.User(email="admin@transitops.com", hashed_password=hashed, role="Admin")
+            u2 = models.User(email="fleet@transitops.com", hashed_password=hashed, role="Fleet Manager")
+            u3 = models.User(email="finance@transitops.com", hashed_password=hashed, role="Financial Analyst")
+            u4 = models.User(email="driver@transitops.com", hashed_password=hashed, role="Driver")
+            db.add_all([u1, u2, u3, u4])
+            db.commit()
+
+        # 1. Vehicles
+        v1 = models.Vehicle(registration_number="MH-01-AB-1234", name_model="Tata Ace", vehicle_type="Van", max_load_capacity=750.0, odometer=12500.5, acquisition_cost=450000.0, status="Available")
+        v2 = models.Vehicle(registration_number="GJ-18-CX-9009", name_model="Ashok Leyland", vehicle_type="Van", max_load_capacity=1250.0, odometer=8500.0, acquisition_cost=650000.0, status="In Shop")
+        v3 = models.Vehicle(registration_number="DL-04-TT-5566", name_model="Mahindra Bolero", vehicle_type="Truck", max_load_capacity=1500.0, odometer=24000.0, acquisition_cost=800000.0, status="Available")
+        db.add_all([v1, v2, v3])
+        db.commit()
+
+        # 2. Drivers
+        d1 = models.Driver(name="Ramesh Kumar", license_number="DL-123456789", license_category="Commercial", license_expiry_date=datetime.now() + timedelta(days=365), contact_number="9876543210", safety_score=92.5, status="Available")
+        d2 = models.Driver(name="Suresh Patel", license_number="GJ-987654321", license_category="Commercial", license_expiry_date=datetime.now() + timedelta(days=180), contact_number="9988776655", safety_score=85.0, status="On Trip")
+        db.add_all([d1, d2])
+        db.commit()
+
+        # 3. Trips
+        t1 = models.Trip(source="Ahmedabad Depot", destination="Surat Hub", vehicle_id=v3.id, driver_id=d2.id, cargo_weight=1200.0, planned_distance=280.0, status="Dispatched")
+        db.add(t1)
+        db.commit()
+
+        # 4. Fuel & Maintenance
+        db.add(models.FuelLog(vehicle_id=v1.id, liters=25.5, cost=2400.0, date=datetime.now() - timedelta(days=2)))
+        db.add(models.Maintenance(vehicle_id=v2.id, description="Brake Pad Replacement", date=datetime.now() - timedelta(days=1), cost=4500.0, status="In Progress"))
+        db.commit()
+
+        print("  [OK] Demo data inserted successfully.")
+        db.close()
+    except Exception as e:
+        print(f"\n  [ERROR] Failed to insert demo data:\n  {e}\n")
+
+
 def start_server():
-    step(3, "Starting FastAPI server")
+    step(4, "Starting FastAPI server")
     print(f"  Server  : http://localhost:8000")
     print(f"  Docs    : http://localhost:8000/docs")
     print(f"  ReDoc   : http://localhost:8000/redoc")
@@ -126,4 +185,5 @@ if __name__ == "__main__":
     print_banner()
     create_database()
     create_tables()
+    seed_demo_data()
     start_server()

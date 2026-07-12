@@ -7,12 +7,16 @@ import { Button } from '../../components/Button';
 import { Table } from '../../components/Table';
 import { StatusTag } from '../../components/StatusTag';
 import { useNotify } from '../../components/NotificationCenter';
-import { vehicles, maintenanceLogs as initialLogs } from '../../data/mockData';
 import { formatINR, formatDate } from '../../utils/formatters';
 import { MAINTENANCE_STATUSES } from '../../constants/statuses';
+import { apiFetch } from '../../api/client';
+import { useEffect } from 'react';
 
 export default function Maintenance() {
-  const [logs, setLogs] = useState(initialLogs);
+  const [vehicles, setVehicles] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [vehicleId, setVehicleId] = useState('');
   const [serviceType, setServiceType] = useState('');
   const [cost, setCost] = useState('');
@@ -20,21 +24,54 @@ export default function Maintenance() {
   const [status, setStatus] = useState('');
   const notify = useNotify();
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const [v, m] = await Promise.all([
+          apiFetch('/vehicles/'),
+          apiFetch('/maintenance/')
+        ]);
+        setVehicles(v);
+        setLogs(m);
+      } catch (err) {
+        console.error("Failed to load maintenance data", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
   const columns = [
-    { key: 'vehicleId', label: 'Vehicle' },
-    { key: 'serviceType', label: 'Service' },
+    { key: 'vehicle_id', label: 'Vehicle ID' },
+    { key: 'description', label: 'Service' },
     { key: 'cost', label: 'Cost', align: 'right', render: (r) => formatINR(r.cost) },
     { key: 'date', label: 'Date', render: (r) => formatDate(r.date) },
     { key: 'status', label: 'Status', sortable: false, render: (r) => <StatusTag status={r.status} /> },
   ];
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault();
     if (!vehicleId || !serviceType || !cost || !date || !status) return;
-    const id = `MT-${String(logs.length + 1).padStart(2, '0')}`;
-    setLogs((prev) => [{ id, vehicleId, serviceType, cost: Number(cost), date, status }, ...prev]);
-    notify('success', `Service record ${id} saved successfully.`);
-    setVehicleId(''); setServiceType(''); setCost(''); setDate(''); setStatus('');
+    
+    try {
+      const payload = {
+        vehicle_id: Number(vehicleId),
+        description: serviceType,
+        date: date,
+        cost: Number(cost),
+        status: status
+      };
+      const created = await apiFetch('/maintenance/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      setLogs((prev) => [created, ...prev]);
+      notify('success', `Service record added successfully.`);
+      setVehicleId(''); setServiceType(''); setCost(''); setDate(''); setStatus('');
+    } catch (err) {
+      notify('error', err.message || 'Failed to save maintenance record');
+    }
   }
 
   return (
@@ -42,7 +79,7 @@ export default function Maintenance() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         <Panel title="Log Service Record">
           <form onSubmit={handleSave} className="flex flex-col gap-4">
-            <Select label="Vehicle" required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: `${v.id} — ${v.name}` }))} />
+            <Select label="Vehicle" required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: `${v.registration_number} — ${v.name_model}` }))} />
             <Select label="Service Type" required value={serviceType} onChange={(e) => setServiceType(e.target.value)} options={['Oil Change', 'Brake Service', 'Tyre Replacement', 'General Inspection', 'Engine Overhaul']} />
             <div className="grid grid-cols-2 gap-4">
               <Input label="Cost" type="number" required value={cost} onChange={(e) => setCost(e.target.value)} />
@@ -68,7 +105,11 @@ export default function Maintenance() {
         </Panel>
 
         <Panel title="Service Log">
-          <Table columns={columns} rows={logs} emptyMessage="No maintenance records." />
+          {loading ? (
+            <p className="text-[12px] font-mono text-ink-soft p-4">Loading maintenance records...</p>
+          ) : (
+            <Table columns={columns} rows={logs} emptyMessage="No maintenance records." />
+          )}
         </Panel>
       </div>
     </PageShell>

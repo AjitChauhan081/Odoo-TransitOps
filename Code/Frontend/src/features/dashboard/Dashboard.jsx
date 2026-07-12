@@ -1,53 +1,61 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageShell } from '../../layouts/PageShell';
 import { Panel } from '../../components/Panel';
 import { KpiCard } from '../../components/KpiCard';
 import { Select } from '../../components/Select';
 import { Table } from '../../components/Table';
 import { StatusTag } from '../../components/StatusTag';
-import { vehicles, drivers, trips } from '../../data/mockData';
+import { apiFetch } from '../../api/client';
 
 export default function Dashboard() {
   const [vehicleType, setVehicleType] = useState('');
   const [status, setStatus] = useState('');
   const [region, setRegion] = useState('');
 
-  const filteredVehicles = useMemo(
-    () =>
-      vehicles.filter(
-        (v) =>
-          (!vehicleType || v.type === vehicleType) &&
-          (!status || v.status === status) &&
-          (!region || v.depot === region)
-      ),
-    [vehicleType, status, region]
-  );
+  const [summary, setSummary] = useState(null);
+  const [utilization, setUtilization] = useState(0);
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeVehicles = filteredVehicles.filter((v) => v.status !== 'Retired').length;
-  const available = filteredVehicles.filter((v) => v.status === 'Available').length;
-  const inMaintenance = filteredVehicles.filter((v) => v.status === 'In Shop').length;
-  const activeTrips = trips.filter((t) => t.status === 'Dispatched').length;
-  const pendingTrips = trips.filter((t) => t.status === 'Draft').length;
-  const driversOnDuty = drivers.filter((d) => d.status === 'On Trip' || d.status === 'Available').length;
-  const utilization = Math.round((trips.filter((t) => t.status !== 'Cancelled').length / trips.length) * 100);
-
-  const statusBreakdown = ['Available', 'On Trip', 'In Shop', 'Retired'].map((s) => ({
-    status: s,
-    count: vehicles.filter((v) => v.status === s).length,
-  }));
-  const totalV = vehicles.length;
-
-  const recentTrips = trips.slice(0, 8);
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const [sumRes, utilRes, tripsRes] = await Promise.all([
+          apiFetch('/dashboard/summary'),
+          apiFetch('/dashboard/fleet-utilization'),
+          apiFetch('/trips/')
+        ]);
+        setSummary(sumRes);
+        setUtilization(utilRes.fleet_utilization_percent);
+        setRecentTrips(tripsRes.slice(0, 8)); // Grab last 8 trips
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboard();
+  }, []);
 
   const tripColumns = [
-    { key: 'id', label: 'Trip' },
-    { key: 'vehicleId', label: 'Vehicle' },
-    { key: 'driverId', label: 'Driver', render: (r) => drivers.find((d) => d.id === r.driverId)?.name || r.driverId },
+    { key: 'id', label: 'Trip ID' },
+    { key: 'vehicle_id', label: 'Vehicle ID' },
+    { key: 'driver_id', label: 'Driver ID' },
     { key: 'status', label: 'Status', sortable: false, render: (r) => <StatusTag status={r.status} /> },
-    { key: 'eta', label: 'ETA', align: 'right' },
+    { key: 'planned_distance', label: 'Distance', align: 'right', render: (r) => `${r.planned_distance} km` },
   ];
 
   const barColors = { Available: 'status-available', 'On Trip': 'status-warn', 'In Shop': 'status-warn', Retired: 'status-danger' };
+
+  if (loading || !summary) return <PageShell title="Dashboard">Loading...</PageShell>;
+
+  const totalV = summary.vehicles.total;
+  const statusBreakdown = [
+    { status: 'Available', count: summary.vehicles.available },
+    { status: 'On Trip', count: summary.vehicles.on_trip },
+    { status: 'In Shop', count: summary.vehicles.in_shop },
+    { status: 'Retired', count: summary.vehicles.retired },
+  ];
 
   return (
     <PageShell title="Dashboard">
@@ -60,12 +68,12 @@ export default function Dashboard() {
       </Panel>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Active Vehicles" value={activeVehicles} underline="status-available" />
-        <KpiCard label="Available Vehicles" value={available} underline="status-available" />
-        <KpiCard label="Vehicles In Maintenance" value={inMaintenance} underline="status-warn" />
-        <KpiCard label="Active Trips" value={activeTrips} underline="status-warn" />
-        <KpiCard label="Pending Trips" value={pendingTrips} underline="status-neutral" />
-        <KpiCard label="Drivers On Duty" value={driversOnDuty} underline="status-available" />
+        <KpiCard label="Active Vehicles" value={summary.vehicles.active} underline="status-available" />
+        <KpiCard label="Available Vehicles" value={summary.vehicles.available} underline="status-available" />
+        <KpiCard label="Vehicles In Maintenance" value={summary.vehicles.in_shop} underline="status-warn" />
+        <KpiCard label="Active Trips" value={summary.trips.dispatched} underline="status-warn" />
+        <KpiCard label="Pending Trips" value={summary.trips.draft} underline="status-neutral" />
+        <KpiCard label="Drivers Available" value={summary.drivers.available} underline="status-available" />
         <KpiCard label="Fleet Utilization" value={utilization} suffix="%" underline="accent" />
       </div>
 

@@ -60,6 +60,13 @@ That's it! The API will be live at:
 
 Press **CTRL+C** to stop the server.
 
+## Demo Credentials
+If you run `start.py` on an empty database, it will automatically populate 4 demo users with the password `password123`:
+- `admin@transitops.com` (Admin)
+- `fleet@transitops.com` (Fleet Manager)
+- `finance@transitops.com` (Financial Analyst)
+- `driver@transitops.com` (Driver)
+
 ---
 
 ## What the Startup Script Does

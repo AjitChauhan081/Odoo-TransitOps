@@ -9,12 +9,17 @@ import { Modal } from '../../components/Modal';
 import { Select } from '../../components/Select';
 import { Input } from '../../components/Input';
 import { useNotify } from '../../components/NotificationCenter';
-import { vehicles, fuelLogs as initialFuel, expenses as initialExpenses, maintenanceLogs } from '../../data/mockData';
 import { formatINR, formatDate, formatNumber } from '../../utils/formatters';
+import { apiFetch } from '../../api/client';
+import { useEffect } from 'react';
 
 export default function FuelExpenses() {
-  const [fuelLogs, setFuelLogs] = useState(initialFuel);
-  const [expenses] = useState(initialExpenses);
+  const [vehicles, setVehicles] = useState([]);
+  const [fuelLogs, setFuelLogs] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [fuelModalOpen, setFuelModalOpen] = useState(false);
   const [fVehicle, setFVehicle] = useState('');
   const [fDate, setFDate] = useState('');
@@ -22,35 +27,72 @@ export default function FuelExpenses() {
   const [fCost, setFCost] = useState('');
   const notify = useNotify();
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const [v, f, e, m] = await Promise.all([
+          apiFetch('/vehicles/'),
+          apiFetch('/fuel/'),
+          apiFetch('/expenses/'),
+          apiFetch('/maintenance/')
+        ]);
+        setVehicles(v);
+        setFuelLogs(f);
+        setExpenses(e);
+        setMaintenanceLogs(m);
+      } catch (err) {
+        console.error("Failed to load expenses data", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
   const fuelColumns = [
-    { key: 'vehicleId', label: 'Vehicle' },
+    { key: 'vehicle_id', label: 'Vehicle ID' },
     { key: 'date', label: 'Date', render: (r) => formatDate(r.date) },
     { key: 'liters', label: 'Liters', align: 'right', render: (r) => `${formatNumber(r.liters)} L` },
     { key: 'cost', label: 'Cost', align: 'right', render: (r) => formatINR(r.cost) },
   ];
 
   const expenseColumns = [
-    { key: 'tripId', label: 'Trip' },
-    { key: 'vehicleId', label: 'Vehicle' },
-    { key: 'toll', label: 'Toll', align: 'right', render: (r) => formatINR(r.toll) },
-    { key: 'other', label: 'Other', align: 'right', render: (r) => formatINR(r.other) },
-    { key: 'maintenanceLinked', label: 'Maint. (Linked)', align: 'right', render: (r) => formatINR(r.maintenanceLinked) },
-    { key: 'total', label: 'Total', align: 'right', render: (r) => formatINR(r.total) },
-    { key: 'status', label: 'Status', sortable: false, render: (r) => <StatusTag status={r.status} /> },
+    { key: 'id', label: 'ID' },
+    { key: 'vehicle_id', label: 'Vehicle ID' },
+    { key: 'expense_type', label: 'Type' },
+    { key: 'amount', label: 'Amount', align: 'right', render: (r) => formatINR(r.amount) },
+    { key: 'date', label: 'Date', render: (r) => formatDate(r.date) },
   ];
 
   const totalFuel = fuelLogs.reduce((sum, f) => sum + f.cost, 0);
   const totalMaint = maintenanceLogs.reduce((sum, m) => sum + m.cost, 0);
-  const totalCost = totalFuel + totalMaint;
+  const totalOther = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalCost = totalFuel + totalMaint + totalOther;
 
-  function handleSaveFuel(e) {
+  async function handleSaveFuel(e) {
     e.preventDefault();
     if (!fVehicle || !fDate || !fLiters || !fCost) return;
-    const id = `FL-${String(fuelLogs.length + 1).padStart(2, '0')}`;
-    setFuelLogs((prev) => [{ id, vehicleId: fVehicle, date: fDate, liters: Number(fLiters), cost: Number(fCost) }, ...prev]);
-    notify('success', `Fuel log ${id} added successfully.`);
-    setFuelModalOpen(false);
-    setFVehicle(''); setFDate(''); setFLiters(''); setFCost('');
+    
+    try {
+      const payload = {
+        vehicle_id: Number(fVehicle),
+        date: new Date(fDate).toISOString(),
+        liters: Number(fLiters),
+        cost: Number(fCost)
+      };
+      
+      const created = await apiFetch('/fuel/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      setFuelLogs((prev) => [created, ...prev]);
+      notify('success', `Fuel log added successfully.`);
+      setFuelModalOpen(false);
+      setFVehicle(''); setFDate(''); setFLiters(''); setFCost('');
+    } catch (err) {
+      notify('error', err.message || 'Failed to save fuel log');
+    }
   }
 
   return (
@@ -65,16 +107,24 @@ export default function FuelExpenses() {
       </div>
 
       <Panel title="Fuel Logs">
-        <Table columns={fuelColumns} rows={fuelLogs} emptyMessage="No fuel logs." />
+        {loading ? (
+          <p className="text-[12px] font-mono text-ink-soft p-4">Loading fuel logs...</p>
+        ) : (
+          <Table columns={fuelColumns} rows={fuelLogs} emptyMessage="No fuel logs." />
+        )}
       </Panel>
 
       <Panel title="Other Expenses (Toll/Misc)">
-        <Table columns={expenseColumns} rows={expenses} emptyMessage="No expense records." />
+        {loading ? (
+          <p className="text-[12px] font-mono text-ink-soft p-4">Loading expenses...</p>
+        ) : (
+          <Table columns={expenseColumns} rows={expenses} emptyMessage="No expense records." />
+        )}
       </Panel>
 
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <span className="micro-label">Total Operational Cost (Auto) = Fuel + Maintenance</span>
+          <span className="micro-label">Total Operational Cost (Auto) = Fuel + Maintenance + Expenses</span>
           <span className="font-serif text-[28px]">{formatINR(totalCost)}</span>
         </div>
       </Panel>
@@ -91,7 +141,7 @@ export default function FuelExpenses() {
         }
       >
         <form onSubmit={handleSaveFuel} className="flex flex-col gap-4">
-          <Select label="Vehicle" required value={fVehicle} onChange={(e) => setFVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.id }))} />
+          <Select label="Vehicle" required value={fVehicle} onChange={(e) => setFVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Input label="Date" type="date" required value={fDate} onChange={(e) => setFDate(e.target.value)} />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Liters" type="number" required value={fLiters} onChange={(e) => setFLiters(e.target.value)} />

@@ -10,59 +10,87 @@ import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
 import { useNotify } from '../../components/NotificationCenter';
-import { vehicles as initialVehicles } from '../../data/mockData';
 import { formatNumber, formatINR } from '../../utils/formatters';
+import { apiFetch } from '../../api/client';
+import { useEffect } from 'react';
 
 export default function VehicleRegistry() {
-  const [vehicles, setVehicles] = useState(initialVehicles);
+  const [vehicles, setVehicles] = useState([]);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [regNo, setRegNo] = useState('');
   const [regError, setRegError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const notify = useNotify();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await apiFetch('/vehicles/');
+        setVehicles(data);
+      } catch (err) {
+        notify('error', 'Failed to load vehicles');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [notify]);
 
   const filtered = useMemo(
     () =>
       vehicles.filter(
         (v) =>
-          (!type || v.type === type) &&
+          (!type || v.vehicle_type === type) &&
           (!status || v.status === status) &&
-          (v.id.toLowerCase().includes(query.toLowerCase()) || v.name.toLowerCase().includes(query.toLowerCase()))
+          (v.registration_number.toLowerCase().includes(query.toLowerCase()) || v.name_model.toLowerCase().includes(query.toLowerCase()))
       ),
     [vehicles, query, type, status]
   );
 
   const columns = [
-    { key: 'id', label: 'Reg. No.' },
-    { key: 'name', label: 'Name / Model' },
-    { key: 'type', label: 'Type' },
-    { key: 'capacityKg', label: 'Capacity', align: 'right', render: (r) => `${formatNumber(r.capacityKg)} kg` },
+    { key: 'registration_number', label: 'Reg. No.' },
+    { key: 'name_model', label: 'Name / Model' },
+    { key: 'vehicle_type', label: 'Type' },
+    { key: 'max_load_capacity', label: 'Capacity', align: 'right', render: (r) => `${formatNumber(r.max_load_capacity)} kg` },
     { key: 'odometer', label: 'Odometer', align: 'right', render: (r) => `${formatNumber(r.odometer)} km` },
-    { key: 'acquisitionCost', label: 'Acq. Cost', align: 'right', render: (r) => formatINR(r.acquisitionCost) },
+    { key: 'acquisition_cost', label: 'Acq. Cost', align: 'right', render: (r) => formatINR(r.acquisition_cost) },
     { key: 'status', label: 'Status', sortable: false, render: (r) => <StatusTag status={r.status} /> },
   ];
 
-  function handleAddVehicle(e) {
+  async function handleAddVehicle(e) {
     e.preventDefault();
-    const duplicate = vehicles.some((v) => v.id.toLowerCase() === regNo.trim().toLowerCase());
     if (!regNo.trim()) {
       setRegError('Registration No. is required.');
       return;
     }
-    if (duplicate) {
-      setRegError('This Registration No. already exists — it must be unique.');
-      return;
+    
+    try {
+      const payload = {
+        registration_number: regNo.trim(),
+        name_model: 'New Vehicle',
+        vehicle_type: 'Van',
+        max_load_capacity: 500,
+        odometer: 0,
+        acquisition_cost: 500000,
+        status: 'Available'
+      };
+      
+      const created = await apiFetch('/vehicles/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      setVehicles((prev) => [created, ...prev]);
+      setModalOpen(false);
+      setRegNo('');
+      setRegError(null);
+      notify('success', `Vehicle ${regNo.trim()} added successfully.`);
+    } catch (err) {
+      setRegError(err.message || 'Failed to add vehicle');
     }
-    setVehicles((prev) => [
-      { id: regNo.trim(), name: 'New Vehicle', type: 'Van', capacityKg: 500, odometer: 0, acquisitionCost: 500000, status: 'Available', depot: 'Gandhinagar Depot' },
-      ...prev,
-    ]);
-    setModalOpen(false);
-    setRegNo('');
-    setRegError(null);
-    notify('success', `Vehicle ${regNo.trim()} added successfully.`);
   }
 
   return (
@@ -88,7 +116,11 @@ export default function VehicleRegistry() {
             }
             onReset={() => { setQuery(''); setType(''); setStatus(''); }}
           />
-          <Table columns={columns} rows={filtered} emptyMessage="No vehicles registered." />
+          {loading ? (
+            <p className="text-[12px] font-mono text-ink-soft p-4">Loading vehicles...</p>
+          ) : (
+            <Table columns={columns} rows={filtered} emptyMessage="No vehicles registered." />
+          )}
           <p className="text-[11px] text-ink-soft font-mono border-t border-line pt-3">
             Registration No. must be unique · Retired/In Shop vehicles are hidden from Trip Dispatcher.
           </p>

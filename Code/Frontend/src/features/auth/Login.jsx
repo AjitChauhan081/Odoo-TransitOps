@@ -18,25 +18,26 @@ export default function Login() {
   const [attempts, setAttempts] = useState(0);
   const [error, setError] = useState(null);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!email || !password || !role) {
-      setError('Enter email, password and select a role to continue.');
+    if (!email || !password) {
+      setError('Enter email and password to continue.');
       return;
     }
-    // Simulated invalid-credentials / lockout demo: any password under 4 chars "fails"
-    if (password.length < 4) {
+    
+    try {
+      setError(null);
+      await login(email, password, role);
+      navigate('/');
+    } catch (err) {
       const next = attempts + 1;
       setAttempts(next);
       setError(
         next >= 5
           ? 'Account locked after 5 failed attempts. Contact your Fleet Manager to reset access.'
-          : `Invalid credentials. Attempt ${next} of 5 before lockout.`
+          : err.message || `Invalid credentials. Attempt ${next} of 5 before lockout.`
       );
-      return;
     }
-    login(email, role);
-    navigate('/');
   }
 
   return (
