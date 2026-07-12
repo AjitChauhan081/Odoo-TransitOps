@@ -1,0 +1,179 @@
+# TransitOps Backend
+
+Smart Transport Operations Platform — FastAPI + PostgreSQL backend.
+
+## Tech Stack
+| Component | Technology |
+|-----------|-----------|
+| Framework | FastAPI |
+| Database  | PostgreSQL (`TransitOps` on port 5433) |
+| ORM       | SQLAlchemy |
+| Auth      | JWT (python-jose + passlib) |
+| Package Manager | uv |
+
+---
+
+## Quick Start (New Machine)
+
+### 1. Prerequisites
+- Python 3.12+
+- PostgreSQL **running** on `localhost:5433`
+  - Username: `postgres`
+  - Password: `1234`
+- `uv` package manager installed
+
+### 2. Install Dependencies
+```bash
+cd D:\Hackathon\Code\Backend
+uv sync
+```
+
+### 3. Run the Startup Script
+This single command will:
+- Create the `TransitOps` database (if it doesn't exist)
+- Create all 7 tables inside it
+- Start the FastAPI server
+
+```bash
+uv run python start.py
+```
+
+That's it! The API will be live at:
+
+| URL | Description |
+|-----|-------------|
+| http://localhost:8000 | API root |
+| http://localhost:8000/docs | Swagger UI (interactive) |
+| http://localhost:8000/redoc | ReDoc documentation |
+
+Press **CTRL+C** to stop the server.
+
+---
+
+## What the Startup Script Does
+
+```
+[Step 1] Creating database: TransitOps
+  → Connects to PostgreSQL on localhost:5433
+  → Creates 'TransitOps' database if not exists
+
+[Step 2] Creating tables in TransitOps
+  → users, vehicles, drivers, trips,
+    maintenance_logs, fuel_logs, expenses
+
+[Step 3] Starting FastAPI server
+  → Uvicorn on http://0.0.0.0:8000 with auto-reload
+```
+
+---
+
+## API Endpoints
+
+### 🔐 Auth (`/auth`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Login & get JWT token |
+| GET  | `/auth/me` | Get current user profile |
+
+### 🚛 Vehicles (`/vehicles`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/vehicles/` | List all vehicles (filter by status) |
+| POST   | `/vehicles/` | Register a new vehicle |
+| GET    | `/vehicles/{id}` | Get vehicle by ID |
+| PUT    | `/vehicles/{id}` | Update vehicle details |
+| PATCH  | `/vehicles/{id}/status` | Update vehicle status only |
+| DELETE | `/vehicles/{id}` | Delete/retire vehicle |
+| GET    | `/vehicles/{id}/trips` | Trip history for vehicle |
+| GET    | `/vehicles/{id}/maintenance` | Maintenance logs for vehicle |
+
+### 👨‍✈️ Drivers (`/drivers`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/drivers/` | List all drivers (filter by status) |
+| POST   | `/drivers/` | Register a new driver |
+| GET    | `/drivers/{id}` | Get driver by ID |
+| PUT    | `/drivers/{id}` | Update driver details |
+| PATCH  | `/drivers/{id}/status` | Update driver status |
+| PATCH  | `/drivers/{id}/safety-score` | Update safety score |
+| DELETE | `/drivers/{id}` | Remove driver |
+| GET    | `/drivers/{id}/trips` | Trip history for driver |
+| GET    | `/drivers/expiring-licenses` | Drivers with expiring licenses |
+
+### 🗺️ Trips (`/trips`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/trips/` | List all trips (filter by status) |
+| POST   | `/trips/` | Create a new trip (Draft) |
+| GET    | `/trips/{id}` | Get trip by ID |
+| PUT    | `/trips/{id}` | Update a Draft trip |
+| PATCH  | `/trips/{id}/dispatch` | Dispatch trip (Draft → Dispatched) |
+| PATCH  | `/trips/{id}/complete` | Complete trip (Dispatched → Completed) |
+| PATCH  | `/trips/{id}/cancel` | Cancel a trip |
+
+### 🔧 Maintenance (`/maintenance`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/maintenance/` | List all logs (filter by vehicle/status) |
+| POST   | `/maintenance/` | Create maintenance log (→ In Shop) |
+| GET    | `/maintenance/{id}` | Get log by ID |
+| PUT    | `/maintenance/{id}` | Update log |
+| PATCH  | `/maintenance/{id}/close` | Close log (→ vehicle Available) |
+
+### ⛽ Fuel Logs (`/fuel`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/fuel/` | List fuel logs (filter by vehicle/trip) |
+| POST   | `/fuel/` | Log fuel fill-up |
+| GET    | `/fuel/{id}` | Get fuel log by ID |
+| DELETE | `/fuel/{id}` | Delete fuel log |
+
+### 💰 Expenses (`/expenses`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/expenses/` | List expenses (filter by vehicle/trip/type) |
+| POST   | `/expenses/` | Log an expense |
+| GET    | `/expenses/{id}` | Get expense by ID |
+| DELETE | `/expenses/{id}` | Delete expense |
+
+### 📊 Dashboard (`/dashboard`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/dashboard/summary` | KPI summary (vehicles, drivers, trips, finances) |
+| GET    | `/dashboard/fleet-utilization` | Fleet utilization metrics |
+| GET    | `/dashboard/cost-per-trip` | Cost breakdown per completed trip |
+
+---
+
+## RBAC — Role-Based Access Control
+| Role | Permissions |
+|------|-------------|
+| **Fleet Manager** | Full access: vehicles, drivers, trips, maintenance, fuel, expenses |
+| **Driver** | Complete trips, log fuel |
+| **Safety Officer** | View drivers, update status & safety score |
+| **Financial Analyst** | View & create expenses |
+
+---
+
+## Database Schema
+
+```
+users          → id, email, hashed_password, role
+vehicles       → id, registration_number, name_model, vehicle_type, max_load_capacity, odometer, acquisition_cost, status
+drivers        → id, name, license_number, license_category, license_expiry_date, contact_number, safety_score, status
+trips          → id, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status, final_odometer, fuel_consumed
+maintenance_logs → id, vehicle_id, description, date, cost, status
+fuel_logs      → id, vehicle_id, trip_id, liters, cost, date
+expenses       → id, expense_type, amount, date, vehicle_id, trip_id
+```
+
+## Business Rules Enforced
+- ✅ Vehicle must be `Available` to be dispatched
+- ✅ Driver must be `Available` to be dispatched
+- ✅ Cargo weight cannot exceed vehicle `max_load_capacity`
+- ✅ Only `Draft` trips can be edited or dispatched
+- ✅ Only `Dispatched` trips can be completed
+- ✅ Completing a trip auto-updates vehicle odometer and frees vehicle+driver
+- ✅ Maintenance logs auto-set vehicle to `In Shop` / `Available` on create/close
+- ✅ Cannot delete a vehicle/driver that is `On Trip`
