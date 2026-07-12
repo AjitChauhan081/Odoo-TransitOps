@@ -26,7 +26,15 @@ export async function apiFetch(endpoint, options = {}) {
     let errorMessage = 'An error occurred';
     try {
       const errorData = await response.json();
-      errorMessage = errorData.detail || errorMessage;
+      if (errorData.detail) {
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(e => `${e.loc?.slice(-1) || 'Field'}: ${e.msg}`).join(', ');
+        } else {
+          errorMessage = JSON.stringify(errorData.detail);
+        }
+      }
     } catch (e) {
       errorMessage = response.statusText;
     }

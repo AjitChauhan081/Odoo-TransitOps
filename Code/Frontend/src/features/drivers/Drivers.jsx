@@ -129,10 +129,12 @@ export default function Drivers() {
 
   async function handleDeleteDriver() {
     if (!driverToDelete) return;
+    const id = driverToDelete.id;
+    const name = driverToDelete.name;
     try {
-      await apiFetch(`/drivers/${driverToDelete.id}`, { method: 'DELETE' });
-      setDrivers((prev) => prev.filter((d) => d.id !== driverToDelete.id));
-      notify('success', `Driver ${driverToDelete.name} deleted.`);
+      await apiFetch(`/drivers/${id}`, { method: 'DELETE' });
+      setDrivers((prev) => prev.filter((d) => d.id !== id));
+      notify('success', `Driver ${name} deleted.`);
     } catch (err) {
       notify('error', err.message || 'Failed to delete driver.');
     }

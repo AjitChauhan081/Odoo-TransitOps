@@ -7,7 +7,7 @@ export function Button({ variant = 'primary', className = '', children, ...props
     danger: 'bg-paper text-status-danger border-status-danger hover:bg-status-danger hover:text-paper',
   };
   return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
+    <button type="button" className={`${base} ${variants[variant]} ${className}`} {...props}>
       {children}
     </button>
   );

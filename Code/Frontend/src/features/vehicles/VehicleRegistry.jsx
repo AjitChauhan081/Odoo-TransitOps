@@ -134,10 +134,12 @@ export default function VehicleRegistry() {
 
   async function handleDeleteVehicle() {
     if (!vehicleToDelete) return;
+    const id = vehicleToDelete.id;
+    const regNo = vehicleToDelete.registration_number;
     try {
-      await apiFetch(`/vehicles/${vehicleToDelete.id}`, { method: 'DELETE' });
-      setVehicles((prev) => prev.filter((v) => v.id !== vehicleToDelete.id));
-      notify('success', `Vehicle ${vehicleToDelete.registration_number} deleted.`);
+      await apiFetch(`/vehicles/${id}`, { method: 'DELETE' });
+      setVehicles((prev) => prev.filter((v) => v.id !== id));
+      notify('success', `Vehicle ${regNo} deleted.`);
     } catch (err) {
       notify('error', err.message || 'Failed to delete vehicle.');
     }
