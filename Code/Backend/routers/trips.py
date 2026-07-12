@@ -46,8 +46,8 @@ def create_trip(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Create a new trip (Draft status). Fleet Manager only."""
-    if current_user.role not in [models.RoleEnum.FLEET_MANAGER]:
+    """Create a new trip (Draft status). Fleet Manager and Driver."""
+    if current_user.role not in [models.RoleEnum.FLEET_MANAGER, models.RoleEnum.DRIVER]:
         raise HTTPException(status_code=403, detail="Not authorized")
     # Validate vehicle and driver exist
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.id == trip.vehicle_id).first()
@@ -125,7 +125,7 @@ def dispatch_trip(
 ):
     """Dispatch a trip (Draft → Dispatched). Validates vehicle and driver availability.
     Marks vehicle as On Trip and driver as On Trip."""
-    if current_user.role not in [models.RoleEnum.FLEET_MANAGER]:
+    if current_user.role not in [models.RoleEnum.FLEET_MANAGER, models.RoleEnum.DRIVER]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
@@ -203,7 +203,7 @@ def cancel_trip(
     current_user: models.User = Depends(get_current_user),
 ):
     """Cancel a Draft or Dispatched trip. Frees up vehicle and driver if dispatched."""
-    if current_user.role not in [models.RoleEnum.FLEET_MANAGER]:
+    if current_user.role not in [models.RoleEnum.FLEET_MANAGER, models.RoleEnum.DRIVER]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
@@ -236,8 +236,8 @@ def update_trip(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Update a Draft trip's details. Fleet Manager only."""
-    if current_user.role not in [models.RoleEnum.FLEET_MANAGER]:
+    """Update a Draft trip's details. Fleet Manager and Driver."""
+    if current_user.role not in [models.RoleEnum.FLEET_MANAGER, models.RoleEnum.DRIVER]:
         raise HTTPException(status_code=403, detail="Not authorized")
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:

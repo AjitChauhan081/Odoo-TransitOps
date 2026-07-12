@@ -10,11 +10,15 @@ import { useEffect } from 'react';
 import { apiFetch } from '../../api/client';
 import { formatDate, isExpired } from '../../utils/formatters';
 import { DRIVER_STATUSES } from '../../constants/statuses';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/roles';
 
 export default function Drivers() {
   const [query, setQuery] = useState('');
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const isFleetManager = user?.role === ROLES.FLEET_MANAGER;
 
   useEffect(() => {
     async function load() {
@@ -54,9 +58,11 @@ export default function Drivers() {
       <Panel
         title="Drivers"
         actions={
-          <Button variant="primary">
-            <Plus size={14} strokeWidth={1.5} /> Add Driver
-          </Button>
+          isFleetManager && (
+            <Button variant="primary">
+              <Plus size={14} strokeWidth={1.5} /> Add Driver
+            </Button>
+          )
         }
       >
         <div className="flex flex-col gap-4">

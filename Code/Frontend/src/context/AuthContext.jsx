@@ -26,11 +26,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password, role) {
-    // OAuth2PasswordRequestForm requires form data
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
-    // You could pass role here if your backend expected it, but the backend assigns roles per user.
 
     const data = await apiFetch('/auth/login', {
       method: 'POST',
@@ -39,6 +37,10 @@ export function AuthProvider({ children }) {
       },
       body: formData,
     });
+
+    if (data.role !== role) {
+      throw new Error(`Invalid role selection. This account is registered as a ${data.role}.`);
+    }
 
     localStorage.setItem('transitops_token', data.access_token);
     

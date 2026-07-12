@@ -1,8 +1,8 @@
-import { Menu, Search } from 'lucide-react';
+import { Menu, Search, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function Topbar({ onToggleSidebar }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-3 h-14 px-4 border-b border-ink bg-paper">
@@ -26,6 +26,9 @@ export function Topbar({ onToggleSidebar }) {
         <span className="w-8 h-8 rounded-sm border border-ink flex items-center justify-center font-mono text-[11px] bg-paper-dim">
           {user?.initials}
         </span>
+        <button onClick={logout} className="ml-2 text-ink-soft hover:text-ink transition-colors" aria-label="Log out" title="Log out">
+          <LogOut size={16} strokeWidth={1.5} />
+        </button>
       </div>
     </header>
   );

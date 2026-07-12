@@ -155,7 +155,7 @@ def seed_demo_data():
 
         # 4. Fuel & Maintenance
         db.add(models.FuelLog(vehicle_id=v1.id, liters=25.5, cost=2400.0, date=datetime.now() - timedelta(days=2)))
-        db.add(models.Maintenance(vehicle_id=v2.id, description="Brake Pad Replacement", date=datetime.now() - timedelta(days=1), cost=4500.0, status="In Progress"))
+        db.add(models.MaintenanceLog(vehicle_id=v2.id, description="Brake Pad Replacement", date=datetime.now() - timedelta(days=1), cost=4500.0, status="Active"))
         db.commit()
 
         print("  [OK] Demo data inserted successfully.")

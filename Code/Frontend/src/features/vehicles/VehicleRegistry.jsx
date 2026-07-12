@@ -13,6 +13,8 @@ import { useNotify } from '../../components/NotificationCenter';
 import { formatNumber, formatINR } from '../../utils/formatters';
 import { apiFetch } from '../../api/client';
 import { useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/roles';
 
 export default function VehicleRegistry() {
   const [vehicles, setVehicles] = useState([]);
@@ -24,6 +26,8 @@ export default function VehicleRegistry() {
   const [regError, setRegError] = useState(null);
   const [loading, setLoading] = useState(true);
   const notify = useNotify();
+  const { user } = useAuth();
+  const isFleetManager = user?.role === ROLES.FLEET_MANAGER;
 
   useEffect(() => {
     async function load() {
@@ -98,9 +102,11 @@ export default function VehicleRegistry() {
       <Panel
         title="Fleet"
         actions={
-          <Button variant="primary" onClick={() => setModalOpen(true)}>
-            <Plus size={14} strokeWidth={1.5} /> Add Vehicle
-          </Button>
+          isFleetManager && (
+            <Button variant="primary" onClick={() => setModalOpen(true)}>
+              <Plus size={14} strokeWidth={1.5} /> Add Vehicle
+            </Button>
+          )
         }
       >
         <div className="flex flex-col gap-4">
