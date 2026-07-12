@@ -11,10 +11,14 @@ export function Modal({ open, onClose, title, children, footer }) {
       if (e.key === 'Escape') onClose?.();
     }
     document.addEventListener('keydown', onKey);
-    // focus trap: focus the panel on open
-    ref.current?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (open) {
+      ref.current?.focus();
+    }
+  }, [open]);
 
   return (
     <AnimatePresence>

@@ -25,6 +25,13 @@ export default function FuelExpenses() {
   const [fDate, setFDate] = useState('');
   const [fLiters, setFLiters] = useState('');
   const [fCost, setFCost] = useState('');
+  
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [eVehicle, setEVehicle] = useState('');
+  const [eType, setEType] = useState('Misc');
+  const [eAmount, setEAmount] = useState('');
+  const [eDate, setEDate] = useState('');
+  
   const notify = useNotify();
 
   useEffect(() => {
@@ -95,13 +102,39 @@ export default function FuelExpenses() {
     }
   }
 
+  async function handleSaveExpense(e) {
+    e.preventDefault();
+    if (!eVehicle || !eType || !eAmount || !eDate) return;
+    
+    try {
+      const payload = {
+        vehicle_id: Number(eVehicle),
+        expense_type: eType,
+        amount: Number(eAmount),
+        date: new Date(eDate).toISOString()
+      };
+      
+      const created = await apiFetch('/expenses/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      setExpenses((prev) => [created, ...prev]);
+      notify('success', `Expense added successfully.`);
+      setExpenseModalOpen(false);
+      setEVehicle(''); setEType('Misc'); setEAmount(''); setEDate('');
+    } catch (err) {
+      notify('error', err.message || 'Failed to save expense');
+    }
+  }
+
   return (
     <PageShell title="Fuel & Expense Management">
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={() => setFuelModalOpen(true)}>
           <Plus size={14} strokeWidth={1.5} /> Log Fuel
         </Button>
-        <Button variant="primary">
+        <Button variant="primary" onClick={() => setExpenseModalOpen(true)}>
           <Plus size={14} strokeWidth={1.5} /> Add Expense
         </Button>
       </div>
@@ -146,6 +179,27 @@ export default function FuelExpenses() {
           <div className="grid grid-cols-2 gap-4">
             <Input label="Liters" type="number" required value={fLiters} onChange={(e) => setFLiters(e.target.value)} />
             <Input label="Cost" type="number" required value={fCost} onChange={(e) => setFCost(e.target.value)} />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={expenseModalOpen}
+        onClose={() => setExpenseModalOpen(false)}
+        title="Add Expense"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveExpense}>Save</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveExpense} className="flex flex-col gap-4">
+          <Select label="Vehicle" required value={eVehicle} onChange={(e) => setEVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
+          <Select label="Expense Type" required value={eType} onChange={(e) => setEType(e.target.value)} options={['Toll', 'Fine', 'Misc', 'Tax']} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Amount (₹)" type="number" required value={eAmount} onChange={(e) => setEAmount(e.target.value)} />
+            <Input label="Date" type="date" required value={eDate} onChange={(e) => setEDate(e.target.value)} />
           </div>
         </form>
       </Modal>

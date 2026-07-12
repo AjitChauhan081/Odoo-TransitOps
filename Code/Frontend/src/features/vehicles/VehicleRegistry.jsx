@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { PageShell } from '../../layouts/PageShell';
 import { Panel } from '../../components/Panel';
 import { SearchBar } from '../../components/SearchBar';
@@ -8,6 +8,7 @@ import { Table } from '../../components/Table';
 import { StatusTag } from '../../components/StatusTag';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
+import { ConfirmationDialog } from '../../components/ConfirmationDialog';
 import { Input } from '../../components/Input';
 import { useNotify } from '../../components/NotificationCenter';
 import { formatNumber, formatINR } from '../../utils/formatters';
@@ -23,6 +24,14 @@ export default function VehicleRegistry() {
   const [status, setStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [regNo, setRegNo] = useState('');
+  const [nameModel, setNameModel] = useState('');
+  const [vehicleType, setVehicleType] = useState('Van');
+  const [maxCapacity, setMaxCapacity] = useState('');
+  const [odometer, setOdometer] = useState('');
+  const [acquisitionCost, setAcquisitionCost] = useState('');
+
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
+
   const [regError, setRegError] = useState(null);
   const [loading, setLoading] = useState(true);
   const notify = useNotify();
@@ -64,6 +73,24 @@ export default function VehicleRegistry() {
     { key: 'status', label: 'Status', sortable: false, render: (r) => <StatusTag status={r.status} /> },
   ];
 
+  if (isFleetManager) {
+    columns.push({
+      key: 'actions',
+      label: '',
+      sortable: false,
+      align: 'right',
+      render: (r) => (
+        <button 
+          onClick={() => setVehicleToDelete(r)} 
+          className="text-ink-soft hover:text-status-danger transition-colors p-1" 
+          title="Delete Vehicle"
+        >
+          <Trash2 size={14} strokeWidth={1.5} />
+        </button>
+      )
+    });
+  }
+
   async function handleAddVehicle(e) {
     e.preventDefault();
     if (!regNo.trim()) {
@@ -74,11 +101,11 @@ export default function VehicleRegistry() {
     try {
       const payload = {
         registration_number: regNo.trim(),
-        name_model: 'New Vehicle',
-        vehicle_type: 'Van',
-        max_load_capacity: 500,
-        odometer: 0,
-        acquisition_cost: 500000,
+        name_model: nameModel.trim() || 'New Vehicle',
+        vehicle_type: vehicleType,
+        max_load_capacity: maxCapacity ? parseInt(maxCapacity, 10) : 500,
+        odometer: odometer ? parseInt(odometer, 10) : 0,
+        acquisition_cost: acquisitionCost ? parseInt(acquisitionCost, 10) : 500000,
         status: 'Available'
       };
       
@@ -89,12 +116,32 @@ export default function VehicleRegistry() {
       
       setVehicles((prev) => [created, ...prev]);
       setModalOpen(false);
+      
+      // Reset form
       setRegNo('');
+      setNameModel('');
+      setVehicleType('Van');
+      setMaxCapacity('');
+      setOdometer('');
+      setAcquisitionCost('');
       setRegError(null);
+      
       notify('success', `Vehicle ${regNo.trim()} added successfully.`);
     } catch (err) {
       setRegError(err.message || 'Failed to add vehicle');
     }
+  }
+
+  async function handleDeleteVehicle() {
+    if (!vehicleToDelete) return;
+    try {
+      await apiFetch(`/vehicles/${vehicleToDelete.id}`, { method: 'DELETE' });
+      setVehicles((prev) => prev.filter((v) => v.id !== vehicleToDelete.id));
+      notify('success', `Vehicle ${vehicleToDelete.registration_number} deleted.`);
+    } catch (err) {
+      notify('error', err.message || 'Failed to delete vehicle.');
+    }
+    setVehicleToDelete(null);
   }
 
   return (
@@ -144,10 +191,27 @@ export default function VehicleRegistry() {
           </>
         }
       >
-        <form onSubmit={handleAddVehicle} className="flex flex-col gap-4">
-          <Input label="Registration No." required value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. VAN-23" error={regError} />
+        <form id="add-vehicle-form" onSubmit={handleAddVehicle} className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Input label="Registration No." required value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. VAN-23" error={regError} />
+          </div>
+          <Input label="Name / Model" value={nameModel} onChange={(e) => setNameModel(e.target.value)} placeholder="e.g. Ford Transit" />
+          <Select label="Vehicle Type" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} options={['Van', 'Truck', 'Mini Truck', 'Trailer']} />
+          <Input label="Max Capacity (kg)" type="number" value={maxCapacity} onChange={(e) => setMaxCapacity(e.target.value)} placeholder="e.g. 500" />
+          <Input label="Initial Odometer (km)" type="number" value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="e.g. 1500" />
+          <Input label="Acquisition Cost (₹)" type="number" value={acquisitionCost} onChange={(e) => setAcquisitionCost(e.target.value)} placeholder="e.g. 500000" />
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        open={!!vehicleToDelete}
+        onClose={() => setVehicleToDelete(null)}
+        onConfirm={handleDeleteVehicle}
+        title="Delete Vehicle"
+        message={`Are you sure you want to delete ${vehicleToDelete?.registration_number}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+      />
     </PageShell>
   );
 }

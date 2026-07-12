@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { PageShell } from '../../layouts/PageShell';
 import { Panel } from '../../components/Panel';
 import { Select } from '../../components/Select';
@@ -13,6 +13,7 @@ import { TRIP_STATUSES } from '../../constants/statuses';
 import { isExpired } from '../../utils/formatters';
 import { apiFetch } from '../../api/client';
 import { useEffect } from 'react';
+import { Check, X } from 'lucide-react';
 
 const STEPS = TRIP_STATUSES; // Draft -> Dispatched -> Completed -> Cancelled
 
@@ -30,25 +31,26 @@ export default function TripDispatcher() {
   const [distance, setDistance] = useState('');
   const notify = useNotify();
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [v, d, t] = await Promise.all([
-          apiFetch('/vehicles/'),
-          apiFetch('/drivers/'),
-          apiFetch('/trips/')
-        ]);
-        setVehicles(v);
-        setDrivers(d);
-        setTrips(t);
-      } catch (err) {
-        notify('error', 'Failed to load dispatch data');
-      } finally {
-        setLoading(false);
-      }
+  const load = useCallback(async () => {
+    try {
+      const [v, d, t] = await Promise.all([
+        apiFetch('/vehicles/'),
+        apiFetch('/drivers/'),
+        apiFetch('/trips/')
+      ]);
+      setVehicles(v);
+      setDrivers(d);
+      setTrips(t);
+    } catch (err) {
+      notify('error', 'Failed to load dispatch data');
+    } finally {
+      setLoading(false);
     }
-    load();
   }, [notify]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const availableVehicles = vehicles.filter((v) => v.status === 'Available');
   const availableDrivers = allDrivers.filter((d) => d.status === 'Available' && !isExpired(d.license_expiry_date));
@@ -89,6 +91,26 @@ export default function TripDispatcher() {
       setSource(''); setDestination(''); setVehicleId(''); setDriverId(''); setCargoWeight(''); setDistance('');
     } catch (err) {
       notify('error', err.message || 'Failed to dispatch trip');
+    }
+  }
+
+  async function handleCompleteTrip(tripId) {
+    try {
+      await apiFetch(`/trips/${tripId}/complete`, { method: 'PATCH' });
+      notify('success', `Trip ${tripId} completed.`);
+      await load();
+    } catch (err) {
+      notify('error', err.message || 'Failed to complete trip');
+    }
+  }
+
+  async function handleCancelTrip(tripId) {
+    try {
+      await apiFetch(`/trips/${tripId}/cancel`, { method: 'PATCH' });
+      notify('success', `Trip ${tripId} cancelled.`);
+      await load();
+    } catch (err) {
+      notify('error', err.message || 'Failed to cancel trip');
     }
   }
 
@@ -145,8 +167,28 @@ export default function TripDispatcher() {
             {liveTrips.map((t) => (
               <div key={t.id} className="border border-line rounded-sm p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-[12px] font-medium">{t.id}</span>
-                  <StatusTag status={t.status} />
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[12px] font-medium">#{t.id}</span>
+                    <StatusTag status={t.status} />
+                  </div>
+                  {t.status === 'Dispatched' && (
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => handleCompleteTrip(t.id)} 
+                        className="p-1 text-status-available hover:bg-status-available/10 rounded" 
+                        title="Complete Trip"
+                      >
+                        <Check size={14} strokeWidth={2} />
+                      </button>
+                      <button 
+                        onClick={() => handleCancelTrip(t.id)} 
+                        className="p-1 text-status-danger hover:bg-status-danger/10 rounded" 
+                        title="Cancel Trip"
+                      >
+                        <X size={14} strokeWidth={2} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 font-mono text-[12px]">
                   <span className="w-2 h-2 bg-ink rounded-full" />
@@ -155,8 +197,8 @@ export default function TripDispatcher() {
                   <span className="w-2 h-2 border border-ink rounded-full" />
                   <span>{t.destination}</span>
                 </div>
-                <div className="mt-2 text-[11px] text-ink-soft font-mono">
-                  Vehicle ID: {t.vehicle_id} · Driver: {allDrivers.find((d) => d.id === t.driver_id)?.name || t.driver_id}
+                <div className="mt-2 text-[11px] text-ink-soft font-mono flex justify-between">
+                  <span>Vehicle: {t.vehicle_id} · Driver: {allDrivers.find((d) => d.id === t.driver_id)?.name || t.driver_id}</span>
                 </div>
               </div>
             ))}
