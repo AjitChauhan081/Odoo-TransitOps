@@ -195,13 +195,13 @@ export default function VehicleRegistry() {
       >
         <form id="add-vehicle-form" onSubmit={handleAddVehicle} className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <Input label="Registration No." required pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$" title="Enter a valid registration number (e.g. VAN-23)" value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. VAN-23" error={regError} />
+            <Input label="Registration No." required maxLength="20" pattern="^[A-Za-z0-9\-]+$" title="Only alphanumeric characters and hyphens are allowed" value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. MH-01-AB-1234" error={regError} />
           </div>
-          <Input label="Name / Model" pattern="^[A-Za-z0-9\s\-]+$" title="Only alphanumeric characters, spaces, and hyphens are allowed" value={nameModel} onChange={(e) => setNameModel(e.target.value)} placeholder="e.g. Ford Transit" />
+          <Input label="Name / Model" required maxLength="50" pattern="^[A-Za-z0-9\s\-]+$" title="Only alphanumeric characters, spaces, and hyphens are allowed" value={nameModel} onChange={(e) => setNameModel(e.target.value)} placeholder="e.g. Ford Transit" />
           <Select label="Vehicle Type" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} options={['Van', 'Truck', 'Mini Truck', 'Trailer']} />
           <Input label="Max Capacity (kg)" type="number" min="0" max="100000" required value={maxCapacity} onChange={(e) => { if(Number(e.target.value)>=0) setMaxCapacity(e.target.value); }} placeholder="e.g. 500" />
           <Input label="Initial Odometer (km)" type="number" min="0" max="999999" required value={odometer} onChange={(e) => { if(Number(e.target.value)>=0) setOdometer(e.target.value); }} placeholder="e.g. 1500" />
-          <Input label="Acquisition Cost (₹)" type="number" min="0" required value={acquisitionCost} onChange={(e) => { if(Number(e.target.value)>=0) setAcquisitionCost(e.target.value); }} placeholder="e.g. 500000" />
+          <Input label="Acquisition Cost (₹)" type="number" min="0" max="100000000" required value={acquisitionCost} onChange={(e) => { if(Number(e.target.value)>=0) setAcquisitionCost(e.target.value); }} placeholder="e.g. 500000" />
         </form>
       </Modal>
 

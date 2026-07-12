@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { PageShell } from '../../layouts/PageShell';
 import { Panel } from '../../components/Panel';
 import { Table } from '../../components/Table';
@@ -11,7 +11,9 @@ import { Input } from '../../components/Input';
 import { useNotify } from '../../components/NotificationCenter';
 import { formatINR, formatDate, formatNumber } from '../../utils/formatters';
 import { apiFetch } from '../../api/client';
-import { useEffect } from 'react';
+import { ConfirmationDialog } from '../../components/ConfirmationDialog';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/roles';
 
 export default function FuelExpenses() {
   const [vehicles, setVehicles] = useState([]);
@@ -32,7 +34,12 @@ export default function FuelExpenses() {
   const [eAmount, setEAmount] = useState('');
   const [eDate, setEDate] = useState('');
   
+  const [fuelToDelete, setFuelToDelete] = useState(null);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  
   const notify = useNotify();
+  const { user } = useAuth();
+  const isFleetManager = user?.role === ROLES.FLEET_MANAGER;
 
   useEffect(() => {
     async function load() {
@@ -70,6 +77,31 @@ export default function FuelExpenses() {
     { key: 'amount', label: 'Amount', align: 'right', render: (r) => formatINR(r.amount) },
     { key: 'date', label: 'Date', render: (r) => formatDate(r.date) },
   ];
+
+  if (isFleetManager) {
+    fuelColumns.push({
+      key: 'actions',
+      label: '',
+      sortable: false,
+      align: 'right',
+      render: (r) => (
+        <button type="button" onClick={() => setFuelToDelete(r)} className="text-ink-soft hover:text-status-danger transition-colors p-1" title="Delete Fuel Log">
+          <Trash2 size={14} strokeWidth={1.5} />
+        </button>
+      )
+    });
+    expenseColumns.push({
+      key: 'actions',
+      label: '',
+      sortable: false,
+      align: 'right',
+      render: (r) => (
+        <button type="button" onClick={() => setExpenseToDelete(r)} className="text-ink-soft hover:text-status-danger transition-colors p-1" title="Delete Expense">
+          <Trash2 size={14} strokeWidth={1.5} />
+        </button>
+      )
+    });
+  }
 
   const totalFuel = fuelLogs.reduce((sum, f) => sum + f.cost, 0);
   const totalMaint = maintenanceLogs.reduce((sum, m) => sum + m.cost, 0);
@@ -128,6 +160,32 @@ export default function FuelExpenses() {
     }
   }
 
+  async function handleDeleteFuel() {
+    if (!fuelToDelete) return;
+    const id = fuelToDelete.id;
+    try {
+      await apiFetch(`/fuel/${id}`, { method: 'DELETE' });
+      setFuelLogs((prev) => prev.filter((f) => f.id !== id));
+      notify('success', 'Fuel log deleted.');
+    } catch (err) {
+      notify('error', err.message || 'Failed to delete fuel log.');
+    }
+    setFuelToDelete(null);
+  }
+
+  async function handleDeleteExpense() {
+    if (!expenseToDelete) return;
+    const id = expenseToDelete.id;
+    try {
+      await apiFetch(`/expenses/${id}`, { method: 'DELETE' });
+      setExpenses((prev) => prev.filter((e) => e.id !== id));
+      notify('success', 'Expense deleted.');
+    } catch (err) {
+      notify('error', err.message || 'Failed to delete expense.');
+    }
+    setExpenseToDelete(null);
+  }
+
   return (
     <PageShell title="Fuel & Expense Management">
       <div className="flex justify-end gap-3">
@@ -177,8 +235,8 @@ export default function FuelExpenses() {
           <Select label="Vehicle" required value={fVehicle} onChange={(e) => setFVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Input label="Date" type="date" required value={fDate} onChange={(e) => setFDate(e.target.value)} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Liters" type="number" min="0.1" step="0.1" required value={fLiters} onChange={(e) => { if(Number(e.target.value)>=0) setFLiters(e.target.value); }} />
-            <Input label="Cost (₹)" type="number" min="0" required value={fCost} onChange={(e) => { if(Number(e.target.value)>=0) setFCost(e.target.value); }} />
+            <Input label="Liters" type="number" min="0.1" max="5000" step="0.1" required value={fLiters} onChange={(e) => { if(Number(e.target.value)>=0) setFLiters(e.target.value); }} />
+            <Input label="Cost (₹)" type="number" min="0" max="1000000" required value={fCost} onChange={(e) => { if(Number(e.target.value)>=0) setFCost(e.target.value); }} />
           </div>
         </form>
       </Modal>
@@ -198,11 +256,31 @@ export default function FuelExpenses() {
           <Select label="Vehicle" required value={eVehicle} onChange={(e) => setEVehicle(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: v.registration_number }))} />
           <Select label="Expense Type" required value={eType} onChange={(e) => setEType(e.target.value)} options={['Toll', 'Fine', 'Misc', 'Tax']} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Amount (₹)" type="number" min="0" required value={eAmount} onChange={(e) => { if(Number(e.target.value)>=0) setEAmount(e.target.value); }} />
+            <Input label="Amount (₹)" type="number" min="0" max="1000000" required value={eAmount} onChange={(e) => { if(Number(e.target.value)>=0) setEAmount(e.target.value); }} />
             <Input label="Date" type="date" required value={eDate} onChange={(e) => setEDate(e.target.value)} />
           </div>
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        open={!!fuelToDelete}
+        onClose={() => setFuelToDelete(null)}
+        onConfirm={handleDeleteFuel}
+        title="Delete Fuel Log"
+        message="Are you sure you want to delete this fuel log? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+      />
+
+      <ConfirmationDialog
+        open={!!expenseToDelete}
+        onClose={() => setExpenseToDelete(null)}
+        onConfirm={handleDeleteExpense}
+        title="Delete Expense"
+        message="Are you sure you want to delete this expense record? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+      />
     </PageShell>
   );
 }
