@@ -74,15 +74,33 @@ def create_trip(
 @router.get("/", response_model=List[schemas.Trip])
 def list_trips(
     status: Optional[models.TripStatusEnum] = Query(None),
+    search: Optional[str] = Query(None, description="Search by source or destination"),
+    sort_by: Optional[str] = Query("id", description="Field to sort by (e.g. id, cargo_weight, planned_distance)"),
+    order: Optional[str] = Query("asc", description="Sort order: 'asc' or 'desc'"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """List all trips. Optionally filter by status."""
+    """List all trips. Supports filtering, searching, and sorting."""
     query = db.query(models.Trip)
     if status:
         query = query.filter(models.Trip.status == status)
+        
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (models.Trip.source.ilike(search_pattern)) | 
+            (models.Trip.destination.ilike(search_pattern))
+        )
+        
+    if hasattr(models.Trip, sort_by):
+        column = getattr(models.Trip, sort_by)
+        if order == "desc":
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
     return query.offset(skip).limit(limit).all()
 
 

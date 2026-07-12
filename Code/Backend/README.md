@@ -22,13 +22,25 @@ Smart Transport Operations Platform — FastAPI + PostgreSQL backend.
   - Password: `1234`
 - `uv` package manager installed
 
-### 2. Install Dependencies
+### 2. Install uv (If not installed)
+If you do not have `uv` installed, install it globally using:
+- **Windows (PowerShell):** `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+- **macOS/Linux:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+### 3. Install Dependencies
 ```bash
 cd D:\Hackathon\Code\Backend
 uv sync
 ```
 
-### 3. Run the Startup Script
+### 4. Configure Environment Variables
+You must set up your environment variables before running the application:
+```bash
+cp .env.example .env
+```
+*Note: Make sure the `DATABASE_URL` inside `.env` matches your local PostgreSQL credentials.*
+
+### 5. Run the Startup Script
 This single command will:
 - Create the `TransitOps` database (if it doesn't exist)
 - Create all 7 tables inside it
@@ -144,6 +156,21 @@ Press **CTRL+C** to stop the server.
 | GET    | `/dashboard/fleet-utilization` | Fleet utilization metrics |
 | GET    | `/dashboard/cost-per-trip` | Cost breakdown per completed trip |
 
+### 📄 Reports & Documents (Bonus Features)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/reports/export-pdf` | Generate & download PDF report of KPIs |
+| POST   | `/vehicles/{id}/documents` | Upload a vehicle document (e.g. Insurance) |
+| GET    | `/vehicles/{id}/documents` | List all documents for a vehicle |
+| GET    | `/vehicles/{id}/documents/{doc_id}/download`| Download a vehicle document |
+| POST   | `/drivers/trigger-reminders` | Mock Email service for expiring licenses |
+
+### 🔍 Advanced Querying
+The `/vehicles`, `/drivers`, and `/trips` endpoints support advanced parameters:
+- `?search=term` (Full text search across key fields)
+- `?sort_by=field` (Sort by a specific column, e.g. `odometer`)
+- `?order=asc|desc` (Order direction)
+
 ---
 
 ## RBAC — Role-Based Access Control
@@ -166,6 +193,7 @@ trips          → id, source, destination, vehicle_id, driver_id, cargo_weight,
 maintenance_logs → id, vehicle_id, description, date, cost, status
 fuel_logs      → id, vehicle_id, trip_id, liters, cost, date
 expenses       → id, expense_type, amount, date, vehicle_id, trip_id
+vehicle_documents → id, vehicle_id, document_type, file_path, uploaded_at
 ```
 
 ## Business Rules Enforced
