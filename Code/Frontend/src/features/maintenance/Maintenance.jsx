@@ -82,7 +82,7 @@ export default function Maintenance() {
             <Select label="Vehicle" required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} options={vehicles.map((v) => ({ value: v.id, label: `${v.registration_number} — ${v.name_model}` }))} />
             <Select label="Service Type" required value={serviceType} onChange={(e) => setServiceType(e.target.value)} options={['Oil Change', 'Brake Service', 'Tyre Replacement', 'General Inspection', 'Engine Overhaul']} />
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Cost (₹)" type="number" min="0" required value={cost} onChange={(e) => setCost(e.target.value)} />
+              <Input label="Cost (₹)" type="number" min="0" required value={cost} onChange={(e) => { if(Number(e.target.value)>=0) setCost(e.target.value); }} />
               <Input label="Date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <Select label="Status" required value={status} onChange={(e) => setStatus(e.target.value)} options={MAINTENANCE_STATUSES} />

@@ -184,11 +184,11 @@ export default function Drivers() {
         }
       >
         <form id="add-driver-form" onSubmit={handleAddDriver} className="grid grid-cols-2 gap-4">
-          <Input label="Full Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
-          <Input label="License No." required value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} placeholder="e.g. DL-12345" />
+          <Input label="Full Name" required pattern="^[A-Za-z\s\-]+$" title="Only letters, spaces, and hyphens are allowed" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
+          <Input label="License No." required pattern="^[A-Za-z0-9\-]+$" title="Only alphanumeric characters and hyphens are allowed" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} placeholder="e.g. DL-12345" />
           <Select label="License Category" value={category} onChange={(e) => setCategory(e.target.value)} options={['Commercial', 'Heavy', 'Light']} />
-          <Input label="Expiry Date" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-          <Input label="Contact Number" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g. 9876543210" />
+          <Input label="Expiry Date" type="date" required value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+          <Input label="Contact Number" type="tel" pattern="^\+?[0-9\s\-]{10,15}$" title="Enter a valid 10-15 digit phone number" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g. 9876543210" />
         </form>
       </Modal>
 

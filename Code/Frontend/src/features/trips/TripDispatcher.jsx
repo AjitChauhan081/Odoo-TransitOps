@@ -125,8 +125,8 @@ export default function TripDispatcher() {
 
             <form onSubmit={handleDispatch} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Source" required value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. Gandhinagar Depot" />
-                <Input label="Destination" required value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Ahmedabad Hub" />
+                <Input label="Source Location" required pattern="^[A-Za-z0-9\s\-,]+$" title="Only letters, numbers, spaces, hyphens, and commas are allowed" value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. Warehouse A" />
+                <Input label="Destination" required pattern="^[A-Za-z0-9\s\-,]+$" title="Only letters, numbers, spaces, hyphens, and commas are allowed" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Store 42" />
               </div>
               <Select
                 label="Vehicle (available only)"
@@ -143,8 +143,12 @@ export default function TripDispatcher() {
                 options={availableDrivers.map((d) => ({ value: d.id, label: `${d.name} (${d.license_number})` }))}
               />
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Cargo Weight (kg)" type="number" min="0" max="50000" step="0.1" required value={cargoWeight} onChange={(e) => setCargoWeight(e.target.value)} />
-                <Input label="Planned Distance (km)" type="number" min="0" max="20000" step="0.1" required value={distance} onChange={(e) => setDistance(e.target.value)} />
+                <Input label="Cargo Weight (kg)" type="number" min="0" max={selectedVehicle?.max_load_capacity || 50000} step="0.1" required value={cargoWeight} onChange={(e) => {
+                  if (Number(e.target.value) >= 0) setCargoWeight(e.target.value);
+                }} />
+                <Input label="Planned Distance (km)" type="number" min="0" max="20000" step="0.1" required value={distance} onChange={(e) => {
+                  if (Number(e.target.value) >= 0) setDistance(e.target.value);
+                }} />
               </div>
 
               {capacityExceeded && (
