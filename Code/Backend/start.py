@@ -12,16 +12,22 @@ Usage:
 
 import sys
 import os
-import subprocess
+from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+# Load variables from .env file
+load_dotenv()
 
 # ─── Database Configuration ───────────────────────────────────────────────────
-DB_HOST = "localhost"
-DB_PORT = 5433
-DB_USER = "postgres"
-DB_PASSWORD = "1234"
-DB_NAME = "TransitOps"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1234@localhost:5433/TransitOps")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Parse the database URL to get individual components for psycopg2
+parsed_url = urlparse(DATABASE_URL)
+DB_USER = parsed_url.username
+DB_PASSWORD = parsed_url.password
+DB_HOST = parsed_url.hostname
+DB_PORT = parsed_url.port or 5432
+DB_NAME = parsed_url.path.lstrip('/')
 
 
 def print_banner():
