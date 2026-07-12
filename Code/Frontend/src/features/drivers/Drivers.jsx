@@ -204,11 +204,14 @@ export default function Drivers() {
         }
       >
         <form id="add-driver-form" onSubmit={handleAddDriver} className="grid grid-cols-2 gap-4">
-          <Input label="Full Name" required pattern="^[A-Za-z\s\-\.\']+$" title="Only letters, spaces, hyphens, dots, and apostrophes are allowed" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
-          <Input label="License No." required pattern="^[A-Za-z0-9\-]+$" title="Only alphanumeric characters and hyphens are allowed" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} placeholder="e.g. DL-12345" />
+          <Input label="Full Name" required pattern="^[A-Za-z][A-Za-z\s\-\.\']{1,}$" minLength="3" title="Must be at least 3 characters and start with a letter" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
+          <Input label="License No." required pattern="^[A-Za-z0-9][A-Za-z0-9\-]{4,}[A-Za-z0-9]$" title="Must be at least 6 characters, start and end with alphanumeric" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} placeholder="e.g. DL-12345" />
           <Select label="License Category" value={category} onChange={(e) => setCategory(e.target.value)} options={['Commercial', 'Heavy', 'Light']} />
-          <Input label="Expiry Date" type="date" required value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-          <Input label="Contact Number" type="tel" pattern="^\+?[0-9\s\-]{10,15}$" title="Enter a valid 10-15 digit phone number" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g. 9876543210" />
+          <Input label="Expiry Date" type="date" required min={new Date().toISOString().split('T')[0]} value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+          <Input label="Contact Number" type="tel" required pattern="^\+?[0-9\s]{10,15}$" title="Enter a valid 10-15 digit phone number without hyphens" value={contact} onChange={(e) => {
+            const val = e.target.value;
+            if (!val.includes('-')) setContact(val);
+          }} placeholder="e.g. 9876543210" />
         </form>
       </Modal>
 
