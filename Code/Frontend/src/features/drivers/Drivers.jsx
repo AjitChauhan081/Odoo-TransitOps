@@ -96,11 +96,29 @@ export default function Drivers() {
     }
     
     try {
+      // Normalize slashes, dots, and spaces to dashes for strict date parsing
+      let finalExpiry = expiry ? expiry.replace(/[\/\.\s]/g, '-') : '';
+      
+      // If it looks like DD-MM-YYYY or MM-DD-YYYY, flip it to YYYY-MM-DD
+      if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(finalExpiry)) {
+        const parts = finalExpiry.split('-');
+        finalExpiry = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+      
+      // Strict validation: if it doesn't match YYYY-MM-DD by now, fallback to default
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(finalExpiry)) {
+        finalExpiry = '';
+      }
+
+      if (!finalExpiry) {
+        finalExpiry = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+      }
+
       const payload = {
         name: name.trim(),
         license_number: licenseNo.trim(),
         license_category: category,
-        license_expiry_date: expiry || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        license_expiry_date: finalExpiry,
         contact_number: contact.trim() || '0000000000',
         safety_score: 100,
         status: 'Available'
@@ -186,7 +204,7 @@ export default function Drivers() {
         }
       >
         <form id="add-driver-form" onSubmit={handleAddDriver} className="grid grid-cols-2 gap-4">
-          <Input label="Full Name" required pattern="^[A-Za-z\s\-]+$" title="Only letters, spaces, and hyphens are allowed" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
+          <Input label="Full Name" required pattern="^[A-Za-z\s\-\.\']+$" title="Only letters, spaces, hyphens, dots, and apostrophes are allowed" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ramesh Kumar" error={addError} />
           <Input label="License No." required pattern="^[A-Za-z0-9\-]+$" title="Only alphanumeric characters and hyphens are allowed" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} placeholder="e.g. DL-12345" />
           <Select label="License Category" value={category} onChange={(e) => setCategory(e.target.value)} options={['Commercial', 'Heavy', 'Light']} />
           <Input label="Expiry Date" type="date" required value={expiry} onChange={(e) => setExpiry(e.target.value)} />
