@@ -4,12 +4,24 @@ Raw Aesthetics fleet-operations UI. React 19 + Tailwind CSS + React Router + Fra
 
 ## Run it
 
-```
+## Run it
+
+```bash
+cd D:\Hackathon\Code\Frontend
 npm install
 npm run dev
 ```
 
-Then open the printed localhost URL. Sign in on `/login` with any email/password (4+ chars) and pick a role — the sidebar and RBAC matrix (Settings) change based on the role you choose.
+Then open the printed localhost URL.
+
+### Demo Credentials
+This frontend is strictly integrated with the FastAPI Backend. You MUST use one of the predefined demo accounts to log in (Password is `password123` for all):
+- `fleet@transitops.com` (Fleet Manager)
+- `driver@transitops.com` (Driver)
+- `safety@transitops.com` (Safety Officer)
+- `finance@transitops.com` (Financial Analyst)
+
+**Note:** The dropdown on the login page will enforce that you select the correct role associated with your email!
 
 ## Build
 
@@ -19,13 +31,12 @@ npm run build
 
 ## What's implemented
 
+- **Live Backend Integration:** Fully integrated with the FastAPI backend using a unified `apiFetch` client that handles JWT authorization.
+- **Dynamic RBAC:** The Sidebar navigation, UI buttons, and Settings permission matrix respond dynamically to the logged-in user's role.
 - Full design-token system in `src/index.css` + `tailwind.config.js` (ink/paper/accent/status colors as CSS variables, serif+mono type pairing, blueprint grid background).
-- Shared component library in `src/components`: Button, Input, Textarea, Select, Checkbox, Table (sort/search/paginate/sticky header & first column), Pagination, SearchBar, StatusTag, RuleCallout, Panel, KpiCard, LifecycleStepper, EmptyState, Skeletons, Modal, ConfirmationDialog, NotificationCenter.
-- Responsive shell in `src/layouts` (Sidebar collapses/drawers, Topbar, PageShell with the visible grid).
+- Shared component library in `src/components`: Button, Input, Select, Checkbox, Table, Modal, and NotificationCenter.
 - All 9 routed pages in `src/features`: Login, Dashboard, Vehicle Registry, Drivers, Trip Dispatcher, Maintenance, Fuel & Expenses, Analytics, Settings/RBAC.
-- Mock data in `src/data/mockData.js` meeting the minimum volumes (22 vehicles, 20 drivers, 32 trips, 16 fuel logs, 11 maintenance logs, 12 expenses), Gujarat depots + Indian driver names.
-- RBAC simulation via Context (`AuthContext`, `RBACContext`) — nav items and the Settings permission matrix respond to the signed-in role.
-- Business-rule callouts (capacity exceeded, duplicate reg. no., expired license) as permanent inline components, separate from the toast-style Notification Center.
+- Business-rule callouts (capacity exceeded, duplicate reg. no., expired license) as permanent inline components.
 
 ## Notes / scope
 

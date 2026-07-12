@@ -24,10 +24,11 @@ Features:
 - Automatic database table creation and seed script via `start.py`.
 
 ### 2. Frontend (`Code/Frontend/`)
-*(Status: Planning phase — Implementation pending approval)*
-- Planned as a **React Single Page Application (SPA)** using **Vite**.
+*(Status: Fully Implemented)*
+- A **React Single Page Application (SPA)** using **Vite**.
+- Fully integrated with the FastAPI Backend (no mock data).
 - **Vanilla CSS** for strict adherence to modern design principles without Tailwind overhead.
-- Interactive Dashboard, tables with search/filter/sort, and RBAC-scoped UI.
+- Interactive Dashboard, tables with search/filter/sort, and strict RBAC-scoped UI blocking unauthorized endpoints.
 
 ---
 
@@ -69,12 +70,12 @@ Once the backend is running, the interactive API documentation is available at:
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-## 🛡️ Role-Based Access Control (RBAC)
-The platform strictly enforces the following roles across all endpoints:
+## 🛡️ Role-Based Access Control (RBAC) & Demo Credentials
+The platform strictly enforces the following roles across all endpoints. Use these demo credentials to test the platform (Password for all users is `password123`):
 
-| Role | Capabilities |
-|------|-------------|
-| **Fleet Manager** | Full access to vehicles, trips, maintenance, and fleet utilization. |
-| **Driver** | Can view assigned trips, update odometer/fuel upon trip completion. |
-| **Safety Officer** | Monitors licenses, manages driver safety scores, can suspend drivers. |
-| **Financial Analyst** | Views fuel costs, logs expenses, and monitors fleet ROI/revenue. |
+| Role | Demo Email | Capabilities |
+|------|------------|-------------|
+| **Fleet Manager** | `fleet@transitops.com` | Full access to vehicles, drivers, trips, maintenance, fuel, and fleet utilization. |
+| **Driver** | `driver@transitops.com` | Can create trips, assign drivers, dispatch, complete trips, and log fuel. |
+| **Safety Officer** | `safety@transitops.com` | Monitors licenses, manages driver safety scores, can suspend drivers. |
+| **Financial Analyst** | `finance@transitops.com`| Views fuel costs, logs expenses, and monitors fleet ROI/revenue. |

@@ -184,7 +184,7 @@ The `/vehicles`, `/drivers`, and `/trips` endpoints support advanced parameters:
 | Role | Permissions |
 |------|-------------|
 | **Fleet Manager** | Full access: vehicles, drivers, trips, maintenance, fuel, expenses |
-| **Driver** | Complete trips, log fuel |
+| **Driver** | Create, dispatch, cancel, and complete trips, log fuel |
 | **Safety Officer** | View drivers, update status & safety score |
 | **Financial Analyst** | View & create expenses |
 
