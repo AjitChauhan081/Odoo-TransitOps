@@ -34,15 +34,33 @@ def create_driver(
 @router.get("/", response_model=List[schemas.Driver])
 def list_drivers(
     status: Optional[models.DriverStatusEnum] = Query(None),
+    search: Optional[str] = Query(None, description="Search by name or license number"),
+    sort_by: Optional[str] = Query("id", description="Field to sort by (e.g. name, safety_score)"),
+    order: Optional[str] = Query("asc", description="Sort order: 'asc' or 'desc'"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """List all drivers. Optionally filter by status."""
+    """List all drivers. Supports filtering, searching, and sorting."""
     query = db.query(models.Driver)
     if status:
         query = query.filter(models.Driver.status == status)
+    
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (models.Driver.name.ilike(search_pattern)) | 
+            (models.Driver.license_number.ilike(search_pattern))
+        )
+        
+    if hasattr(models.Driver, sort_by):
+        column = getattr(models.Driver, sort_by)
+        if order == "desc":
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
     return query.offset(skip).limit(limit).all()
 
 
@@ -60,6 +78,35 @@ def get_expiring_licenses(
         models.Driver.license_expiry_date >= date.today(),
     ).all()
     return drivers
+
+
+@router.post("/trigger-reminders", status_code=status.HTTP_200_OK)
+def trigger_license_reminders(
+    days: int = Query(30, description="Licenses expiring within this many days"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Trigger mock email reminders for drivers with expiring licenses. Safety Officer / Fleet Manager."""
+    if current_user.role not in [models.RoleEnum.FLEET_MANAGER, models.RoleEnum.SAFETY_OFFICER]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    from datetime import timedelta
+    cutoff = date.today() + timedelta(days=days)
+    drivers = db.query(models.Driver).filter(
+        models.Driver.license_expiry_date <= cutoff,
+        models.Driver.license_expiry_date >= date.today(),
+    ).all()
+    
+    print("\n" + "="*50)
+    print(f"MOCK EMAIL SERVICE: Dispatching {len(drivers)} reminders")
+    print("="*50)
+    for d in drivers:
+        print(f"To: {d.name} <driver_{d.id}@example.com>")
+        print(f"Subject: URGENT: Driving License Expiring Soon")
+        print(f"Body: Dear {d.name}, your license ({d.license_number}) expires on {d.license_expiry_date}. Please renew immediately.")
+        print("-" * 50)
+        
+    return {"message": f"Successfully queued {len(drivers)} email reminders."}
 
 
 @router.get("/{driver_id}", response_model=schemas.Driver)

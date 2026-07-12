@@ -4,7 +4,7 @@ from database import engine, Base
 import models
 
 # Import all routers
-from routers import auth, vehicles, drivers, trips, maintenance, fuel, expenses, dashboard
+from routers import auth, vehicles, drivers, trips, maintenance, fuel, expenses, dashboard, documents, reports
 
 # ─── Create all DB tables on startup ─────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
@@ -49,6 +49,8 @@ app.include_router(maintenance.router)
 app.include_router(fuel.router)
 app.include_router(expenses.router)
 app.include_router(dashboard.router)
+app.include_router(documents.router)
+app.include_router(reports.router)
 
 
 @app.get("/", tags=["Health"])

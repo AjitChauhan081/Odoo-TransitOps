@@ -55,6 +55,7 @@ class Vehicle(Base):
     maintenance_logs = relationship("MaintenanceLog", back_populates="vehicle")
     fuel_logs = relationship("FuelLog", back_populates="vehicle")
     expenses = relationship("Expense", back_populates="vehicle")
+    documents = relationship("VehicleDocument", back_populates="vehicle")
 
 class Driver(Base):
     __tablename__ = "drivers"
@@ -122,3 +123,14 @@ class Expense(Base):
     trip_id = Column(Integer, ForeignKey("trips.id"), nullable=True)
 
     vehicle = relationship("Vehicle", back_populates="expenses")
+
+class VehicleDocument(Base):
+    __tablename__ = "vehicle_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=False)
+    document_type = Column(String, nullable=False) # e.g. Insurance, Registration
+    file_path = Column(String, nullable=False)
+    uploaded_at = Column(DateTime, nullable=False)
+
+    vehicle = relationship("Vehicle", back_populates="documents")
